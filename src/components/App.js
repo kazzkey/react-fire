@@ -1,150 +1,156 @@
 import React, { useEffect, useState } from 'react';
 import firebase from '../firebase';
+import '../App.css';
 
 const App = () => {
-  const [users, setUsers] = useState([]);
-  const [userName, setUserName] = useState('');
-  const [age, setAge] = useState('');
-  const [documentId, setDocumentId] = useState('');
+  const [blogs, setBlogs] = useState([]);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [edit, setEdit] =useState(false);
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
 
+  // 状態監視
   useEffect(() => {
     const db = firebase.firestore();
-    const unsubscribe = db.collection('users').onSnapshot((querySnapshot) => {
-      const _users = querySnapshot.docs.map(doc => {
+    const unsubscribe = db.collection('blogs').onSnapshot((querySnapshot) => {
+      const _blogs = querySnapshot.docs.map(doc => {
         return ({
-          userId: doc.id,
+          blogId: doc.id,
           ...doc.data()
-        })
+        });
       });
-      setUsers(_users);
+      setBlogs(_blogs);
     });
     return () => {
       unsubscribe();
     };
   }, []);
 
-  const handleFetchBtn = async () => {
-    const db = firebase.firestore();
-    const snapshot = await db.collection('users').get();
-    const _users = [];
-    snapshot.forEach((doc) => {
-      _users.push({
-        userId: doc.id,
-        ...doc.data()
-      });
-    });
-    setUsers(_users);
-  };
-
+  // 作成ボタン
   const handleAddBtn = async () => {
-    if (!userName || !age) {
+    if (!title || !content) {
       alert("フォームに値を入力してください。");
       return;
-    }
-    const parseAge = parseInt(age, 10);
-    if (isNaN(parseAge)) {
-      alert("年齢は半角数字で入力してください。");
-      return;
-    }
+    };
     const db = firebase.firestore();
-    await db.collection('users').add({
-      name: userName,
-      age: parseAge
+    await db.collection('blogs').add({
+      title: title,
+      content: content
     });
-    setUserName('');
-    setAge('');
-  }
+    setTitle('');
+    setContent('');
+  };
 
-  const handleUpdateBtn = async () => {
-    if (!documentId) {
-      alert("更新するIDを入力してください。");
-      return;
-    }
+  // 編集ボタン
+  const handleEditBtn = () => {
+    setEdit(!edit);
+  };
 
+  // 更新ボタン
+  const handleUpdateBtn = async (id) => {
     const newData = {};
-    if (userName) {
-      newData['name'] = userName;
-    }
-    if (age) {
-      newData['age'] = parseInt(age, 10);
-    }
-
+    if (editTitle) {
+      newData['title'] = editTitle;
+    };
+    if (editContent) {
+      newData['content'] = editContent;
+    };
     try {
+      setEdit(false);
       const db = firebase.firestore();
-      await db.collection('users').doc(documentId).update(newData);
-      setUserName('');
-      setAge('');
-      setDocumentId('');
+      await db.collection('blogs').doc(id).update(newData);
     } catch (error) {
       console.error(error);
-    }
-  }
+    };
+  };
 
-  const handleDeleteBtn = async () => {
-    if (!documentId) {
-      alert("削除するIDを入力してください。");
+  // 削除ボタン
+  const handleDeleteBtn = async (id) => {
+    const result = window.confirm("削除してもよろしいですか？");
+    if (result) {
+      try {
+        const db = firebase.firestore();
+        await db.collection('blogs').doc(id).delete();
+      } catch (error) {
+        console.error(error);
+      };
+    } else {
       return;
-    }
+    };
+  };
 
-    try {
-      const db = firebase.firestore();
-      await db.collection('users').doc(documentId).delete();
-      setUserName('');
-      setAge('');
-      setDocumentId('');
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  // ブログリスト
+  const blogListItems = blogs.map(blog => {
+    if (edit) {
+      return (
+        <div className="editForm">
+          <input type="text"
+                 value={editTitle}
+                 placeholder={blog.title}
+                 onChange={(e) => {setEditTitle(e.target.value)}}
+          />
+          <textarea
+            value={editContent}
+            placeholder={blog.content}
+            onChange={(e) => {setEditContent(e.target.value)}}
+          ></textarea>
+          <div className="contentBtn">
+            <button onClick={() => handleUpdateBtn(blog.blogId)}>更新</button>
+            <button onClick={handleEditBtn}>キャンセル</button>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div key={blog.blogId} id="list" className="blogContent">
+          <ul>
+            <li>タイトル: {blog.title}</li>
+            <li>本文: {blog.content}</li>
+          </ul>
+          <div className="contentBtn">
+            <button onClick={handleEditBtn}>編集</button>
+            <button onClick={() => handleDeleteBtn(blog.blogId)}>削除</button>
+          </div>
+        </div>
+      );
+    };
+  });
 
-  const userListItems = users.map(user => {
-    return(
-      <li key={user.userId}>
-        <ul>
-          <li>ID: {user.userId}</li>
-          <li>氏名: {user.name}</li>
-          <li>年齢: {user.age}</li>
-        </ul>
-      </li>
-    )
-  })
-
+  // 基本レンダー
   return(
-    <div>
-      <div>
-        <label htmlFor="username">氏名：</label>
-        <input
-          type="text"
-          id="username"
-          value={userName}
-          onChange={(e) => {setUserName(e.target.value)}}
-        />
-        <label htmlFor="age">年齢：</label>
-        <input
-          type="text"
-          id="age"
-          value={age}
-          onChange={(e) => {setAge(e.target.value)}}
-        />
-        <label htmlFor="documentId">ID：</label>
-        <input
-          type="text"
-          id="documentId"
-          value={documentId}
-          onChange={(e) => {setDocumentId(e.target.value)}}
-        />
+    <div className="App">
+      <h2>新規作成</h2>
+      <div className="blogForm">
+        <div>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            placeholder="タイトル"
+            onChange={(e) => {setTitle(e.target.value)}}
+          />
+        </div>
+        <div>
+          <textarea
+            id="content"
+            value={content}
+            placeholder="本文を入力してください"
+            onChange={(e) => {setContent(e.target.value)}}
+          ></textarea>
+        </div>
+        <div  className="contentBtn">
+          <button onClick={handleAddBtn}>送信</button>
+        </div>
+        
       </div>
-      
-      <button onClick={handleAddBtn}>追加</button>
-      <button onClick={handleFetchBtn}>取得</button>
-      <button onClick={handleUpdateBtn}>更新</button>
-      <button onClick={handleDeleteBtn}>削除</button>
+      <hr />
+      <h2>ブログ一覧</h2>
       <div>
-        <ul>{userListItems}</ul>
+        {blogListItems}
       </div>
     </div>
   );
-}
-
+};
 
 export default App;
