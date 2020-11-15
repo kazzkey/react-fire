@@ -1,38 +1,41 @@
+input {
+  height: 30px;
+  width: 400px;
+  margin: 10px;
+}
+
+textarea {
+  height: 100px;
+  width: 400px;
+  margin: 5px 10px;
+}
+
+button {
+  margin: 5px;
+}
+
+ul {
+  list-style: none;
+}
+
 .App {
-  text-align: center;
+  padding: 20px;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.blogForm {
+  border: solid 1px #000;
+  width: 100%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.blogContent {
+  border: solid 1px #000;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.contentBtn {
+  text-align: right;
+  padding: 0 10px;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.editForm {
+  border: solid 1px #000;
 }
